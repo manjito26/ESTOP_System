@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}Test Device - ESTOP Function Record System{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h1><i class="fas fa-clipboard-check text-primary"></i> Safety Device Testing</h1>
+    <p class="lead">Select a machine and safety device to perform testing</p>
+</div>
+
+<form id="testForm">
+    <!-- Machine Selection -->
+    <div class="form-section fade-in">
+        <h4><i class="fas fa-cogs"></i> Select Machine</h4>
+        <div class="mb-3">
+            <label for="machineSelect" class="form-label">Machine</label>
+            <select class="form-select mobile-select" id="machineSelect" name="machine_id" required>
+                <option value="">Choose a machine...</option>
+                {% for machine in machines %}
+                <option value="{{ machine.machine_id }}">{{ machine.machine_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <!-- Safety Device Selection (initially hidden) -->
+    <div class="form-section fade-in hidden" id="deviceSection">
+        <h4><i class="fas fa-shield-alt"></i> Select Safety Device</h4>
+        <div class="mb-3">
+            <label for="deviceSelect" class="form-label">Safety Device</label>
+            <select class="form-select mobile-select" id="deviceSelect" name="device_id" required>
+                <option value="">Loading devices...</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <small class="text-muted" id="deviceInfo">
+                <i class="fas fa-info-circle"></i> First device will be auto-selected
+            </small>
+        </div>
+    </div>
+
+    <!-- Test Results Section (initially hidden) -->
+    <div class="form-section fade-in hidden" id="testSection">
+        <h4><i class="fas fa-vial"></i> Test Results</h4>
+        <div class="text-center">
+            <p class="mb-3">Press the appropriate button to record the test result:</p>
+            <div class="test-buttons">
+                <button type="button" class="btn btn-pass" id="passBtn">
+                    <i class="fas fa-check-circle"></i> PASS
+                </button>
+                <button type="button" class="btn btn-fail" id="failBtn">
+                    <i class="fas fa-times-circle"></i> FAIL
+                </button>
+            </div>
+        </div>
+        
+        <!-- Notes Section (initially hidden) -->
+        <div class="mt-4 hidden" id="notesSection">
+            <label for="notes" class="form-label">Notes (Optional)</label>
+            <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Add any additional notes about the test..."></textarea>
+        </div>
+        
+        <!-- Confirm Section (initially hidden) -->
+        <div class="mt-4 text-center hidden" id="confirmSection">
+            <div class="alert alert-info">
+                <h5><i class="fas fa-clipboard-check"></i> Test Summary</h5>
+                <div id="testSummary"></div>
+            </div>
+            <button type="button" class="btn btn-success btn-lg" id="confirmBtn">
+                <i class="fas fa-save"></i> Record Test
+            </button>
+            <button type="button" class="btn btn-secondary ms-2" id="resetBtn">
+                <i class="fas fa-redo"></i> Reset
+            </button>
+        </div>
+    </div>
+</form>
+
+<!-- Success Message (initially hidden) -->
+<div class="alert alert-success hidden" id="successMessage">
+    <h4><i class="fas fa-check-circle"></i> Test Recorded Successfully!</h4>
+    <p>The test result has been saved to the database.</p>
+    <button type="button" class="btn btn-success" onclick="window.location.reload()">
+        <i class="fas fa-plus"></i> Test Another Device
+    </button>
+    <a href="{{ url_for('history') }}" class="btn btn-outline-success ms-2">
+        <i class="fas fa-history"></i> View History
+    </a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedMachineId = null;
+let selectedDeviceId = null;
+let selectedMachineName = '';
+let selectedDeviceName = '';
+let testResult = '';
+
+// Machine selection handler
+document.getElementById('machineSelect').addEventListener('change', function() {
+    const machineId = this.value;
+    const machineName = this.options[this.selectedIndex].text;
+    
+    if (machineId) {
+        selectedMachineId = machineId;
+        selectedMachineName = machineName;
+        loadDevices(machineId);
+        showSection('deviceSection');
+        hideSection('testSection');
+    } else {
+        hideSection('deviceSection');
+        hideSection('testSection');
+    }
+});
+
+// Load devices for selected machine
+function loadDevices(machineId) {
+    showLoading();
+    
+    fetch(`/api/devices/${machineId}`)
+        .then(response => response.json())
+        .then(data => {
+            const deviceSelect = document.getElementById('deviceSelect');
+            deviceSelect.innerHTML = '';
+            
+            if (data.length > 0) {
+                data.forEach((device, index) => {
+                    const option = document.createElement('option');
+                    option.value = device.device_id;
+                    option.textContent = `${device.device_name} (${device.device_type})`;
+                    deviceSelect.appendChild(option);
+                    
+                    // Auto-select first device
+                    if (index === 0) {
+                        option.selected = true;
+                        selectedDeviceId = device.device_id;
+                        selectedDeviceName = device.device_name;
+                    }
+                });
+                
+                // Show test section
+                showSection('testSection');
+                
+                document.getElementById('deviceInfo').innerHTML = 
+                    `<i class="fas fa-info-circle"></i> Found ${data.length} safety device(s). First device auto-selected.`;
+            } else {
+                deviceSelect.innerHTML = '<option value="">No devices found</option>';
+                document.getElementById('deviceInfo').innerHTML = 
+                    '<i class="fas fa-exclamation-triangle text-warning"></i> No safety devices found for this machine.';
+                hideSection('testSection');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading devices:', error);
+            document.getElementById('deviceSelect').innerHTML = '<option value="">Error loading devices</option>';
+            document.getElementById('deviceInfo').innerHTML = 
+                '<i class="fas fa-exclamation-triangle text-danger"></i> Error loading devices.';
+        })
+        .finally(() => {
+            hideLoading();
+        });
+}
+
+// Device selection handler
+document.getElementById('deviceSelect').addEventListener('change', function() {
+    selectedDeviceId = this.value;
+    selectedDeviceName = this.options[this.selectedIndex].text;
+});
+
+// PASS button handler
+document.getElementById('passBtn').addEventListener('click', function() {
+    testResult = 'PASS';
+    showTestSummary();
+});
+
+// FAIL button handler
+document.getElementById('failBtn').addEventListener('click', function() {
+    testResult = 'FAIL';
+    showTestSummary();
+});
+
+// Show test summary
+function showTestSummary() {
+    const summaryHtml = `
+        <strong>Machine:</strong> ${selectedMachineName}<br>
+        <strong>Safety Device:</strong> ${selectedDeviceName.split(' (')[0]}<br>
+        <strong>Test Result:</strong> <span class="status-${testResult.toLowerCase()}">${testResult}</span><br>
+        <strong>Tested By:</strong> {{ username }}<br>
+        <strong>Date/Time:</strong> ${new Date().toLocaleString()}
+    `;
+    
+    document.getElementById('testSummary').innerHTML = summaryHtml;
+    showSection('notesSection');
+    showSection('confirmSection');
+    
+    // Scroll to confirmation section
+    document.getElementById('confirmSection').scrollIntoView({ behavior: 'smooth' });
+}
+
+// Confirm and record test
+document.getElementById('confirmBtn').addEventListener('click', function() {
+    const notes = document.getElementById('notes').value;
+    
+    const testData = {
+        machine_id: parseInt(selectedMachineId),
+        device_id: parseInt(selectedDeviceId),
+        test_result: testResult,
+        notes: notes
+    };
+    
+    showLoading();
+    
+    fetch('/test', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(testData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            hideSection('testForm');
+            showSection('successMessage');
+            document.getElementById('successMessage').scrollIntoView({ behavior: 'smooth' });
+        } else {
+            alert('Error recording test: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error recording test:', error);
+        alert('Error recording test. Please try again.');
+    })
+    .finally(() => {
+        hideLoading();
+    });
+});
+
+// Reset button handler
+document.getElementById('resetBtn').addEventListener('click', function() {
+    document.getElementById('machineSelect').value = '';
+    hideSection('deviceSection');
+    hideSection('testSection');
+    selectedMachineId = null;
+    selectedDeviceId = null;
+    selectedMachineName = '';
+    selectedDeviceName = '';
+    testResult = '';
+});
+
+// Utility functions
+function showSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    section.classList.remove('hidden');
+    section.classList.add('fade-in');
+}
+
+function hideSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    section.classList.add('hidden');
+    section.classList.remove('fade-in');
+}
+</script>
+{% endblock %}

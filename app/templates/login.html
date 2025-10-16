@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Login - ESTOP Function Record System{% endblock %}
+
+{% block content %}
+<div class="login-container" style="max-width: 400px; margin: 20px auto; background: white; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); overflow: hidden;">
+    <div class="content" style="padding: 30px;">
+        <div class="welcome-text" style="text-align: center; font-size: 24px; font-weight: 300; color: #333; margin-bottom: 30px;">
+            <i class="fas fa-shield-alt" style="color: #28a745; font-size: 2rem;"></i><br>
+            ESTOP Function Record System
+        </div>
+    
+        <form method="POST" action="{{ url_for('login') }}">
+            <div class="form-group" style="margin-bottom: 25px;">
+                <label for="username" class="form-label" style="display: block; font-size: 18px; font-weight: 500; color: #495057; margin-bottom: 8px;">Username</label>
+                <input type="text" class="form-control" style="width: 100%; padding: 15px; font-size: 16px; border: 2px solid #dee2e6; border-radius: 10px; transition: all 0.3s ease;" id="username" name="username" required autofocus>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 25px;">
+                <label for="password" class="form-label" style="display: block; font-size: 18px; font-weight: 500; color: #495057; margin-bottom: 8px;">Password</label>
+                <input type="password" class="form-control" style="width: 100%; padding: 15px; font-size: 16px; border: 2px solid #dee2e6; border-radius: 10px; transition: all 0.3s ease;" id="password" name="password" required>
+            </div>
+            
+            <div class="d-grid">
+                <button type="submit" class="btn" style="display: inline-block; padding: 15px 24px; font-size: 18px; font-weight: 500; text-align: center; border: none; border-radius: 10px; cursor: pointer; transition: all 0.3s ease; background: linear-gradient(45deg, #28a745, #20c997); color: white; width: 100%;">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+            </div>
+        </form>
+        
+        <hr class="my-4">
+        
+        <div class="text-center">
+            <small class="text-muted">
+                <i class="fas fa-info-circle"></i>
+                Safety device testing and record system<br>
+                Version 1.0 - {{ moment().format('YYYY') if moment else '2025' }}
+            </small>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Focus on username field when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('username').focus();
+    });
+    
+    // Handle form submission
+    document.querySelector('form').addEventListener('submit', function(e) {
+        showLoading();
+    });
+</script>
+{% endblock %}

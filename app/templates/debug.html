@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Debug - ESTOP Function Record System{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h1><i class="fas fa-bug text-primary"></i> Debug Information</h1>
+    <p class="lead">System information and available endpoints</p>
+</div>
+
+<!-- System Status -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <i class="fas fa-server text-success" style="font-size: 2rem;"></i>
+                <h5 class="mt-2">Server Status</h5>
+                <span class="badge bg-success">Running</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <i class="fas fa-database text-primary" style="font-size: 2rem;"></i>
+                <h5 class="mt-2">Database</h5>
+                <span class="badge bg-primary">EFRS Connected</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <i class="fas fa-user text-info" style="font-size: 2rem;"></i>
+                <h5 class="mt-2">Current User</h5>
+                <span class="badge bg-info">{{ username }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Available Endpoints -->
+<div class="card">
+    <div class="card-header">
+        <h4><i class="fas fa-list"></i> Available Endpoints</h4>
+        <small class="text-muted">All registered Flask routes and their HTTP methods</small>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped debug-table">
+                <thead>
+                    <tr>
+                        <th>Endpoint</th>
+                        <th>HTTP Methods</th>
+                        <th>Function</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for endpoint in endpoints %}
+                    <tr>
+                        <td>
+                            <code>{{ endpoint.endpoint }}</code>
+                        </td>
+                        <td>
+                            {% for method in endpoint.methods.split(', ') %}
+                                <span class="badge bg-secondary me-1">{{ method }}</span>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            <code>{{ endpoint.function }}</code>
+                        </td>
+                        <td>
+                            {% if endpoint.endpoint == '/' %}
+                                Main page - Safety device testing interface
+                            {% elif endpoint.endpoint == '/login' %}
+                                User authentication
+                            {% elif endpoint.endpoint == '/logout' %}
+                                User logout
+                            {% elif endpoint.endpoint == '/history' %}
+                                View test history with search and filters
+                            {% elif endpoint.endpoint == '/test' %}
+                                API endpoint to record test results
+                            {% elif '/api/devices/' in endpoint.endpoint %}
+                                API endpoint to get safety devices for a machine
+                            {% elif endpoint.endpoint == '/debug' %}
+                                This debug page
+                            {% else %}
+                                {{ endpoint.function | title }} endpoint
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- System Information -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> System Information</h5>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">Framework:</dt>
+                    <dd class="col-sm-8">Flask</dd>
+                    
+                    <dt class="col-sm-4">Database:</dt>
+                    <dd class="col-sm-8">SQL Server (EFRS)</dd>
+                    
+                    <dt class="col-sm-4">Auth Source:</dt>
+                    <dd class="col-sm-8">RACE/users.json</dd>
+                    
+                    <dt class="col-sm-4">Theme:</dt>
+                    <dd class="col-sm-8">RACE Green Theme</dd>
+                    
+                    <dt class="col-sm-4">Version:</dt>
+                    <dd class="col-sm-8">1.0.0</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-mobile-alt"></i> Mobile Features</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Responsive Design
+                        <span class="badge bg-success rounded-pill">✓</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Touch-Friendly Buttons
+                        <span class="badge bg-success rounded-pill">✓</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Auto-Selection
+                        <span class="badge bg-success rounded-pill">✓</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Real-time Search
+                        <span class="badge bg-success rounded-pill">✓</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="mt-4 text-center">
+    <div class="btn-group" role="group">
+        <a href="{{ url_for('index') }}" class="btn btn-primary">
+            <i class="fas fa-home"></i> Main Page
+        </a>
+        <a href="{{ url_for('history') }}" class="btn btn-success">
+            <i class="fas fa-history"></i> View History
+        </a>
+        <button type="button" class="btn btn-info" onclick="location.reload()">
+            <i class="fas fa-sync"></i> Refresh Debug
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Debug page specific functionality
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('ESTOP System Debug Page Loaded');
+    console.log('Available endpoints:', {{ endpoints|length }});
+    
+    // Add click handlers to endpoint URLs for testing
+    const endpointCells = document.querySelectorAll('code');
+    endpointCells.forEach(cell => {
+        if (cell.textContent.startsWith('/') && !cell.textContent.includes('<')) {
+            cell.style.cursor = 'pointer';
+            cell.title = 'Click to navigate to this endpoint';
+            cell.addEventListener('click', function() {
+                const url = this.textContent;
+                if (url !== '/test' && !url.includes('/api/devices/')) {
+                    window.location.href = url;
+                } else {
+                    alert('This is an API endpoint. Use from the main application.');
+                }
+            });
+        }
+    });
+});
+
+// System health check function
+function checkSystemHealth() {
+    fetch('/api/health', {
+        method: 'GET'
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('System health:', data);
+    })
+    .catch(error => {
+        console.log('Health check not implemented:', error);
+    });
+}
+
+// Run health check on page load
+// checkSystemHealth();
+</script>
+{% endblock %}

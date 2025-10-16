@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}Test History - ESTOP Function Record System{% endblock %}
+
+{% block content %}
+<div class="text-center mb-4">
+    <h1><i class="fas fa-history text-primary"></i> Test History</h1>
+    <p class="lead">View and search safety device test records</p>
+</div>
+
+<!-- Search and Filter Section -->
+<div class="search-filters">
+    <form method="GET" id="filterForm">
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label for="search" class="form-label">Search Devices</label>
+                <input type="text" class="form-control search-input" id="search" name="search" 
+                       value="{{ search_query }}" placeholder="Type to search devices or machines..." autocomplete="off">
+            </div>
+            <div class="col-md-3 mb-3">
+                <label for="machine" class="form-label">Filter by Machine</label>
+                <select class="form-select" id="machine" name="machine">
+                    <option value="">All Machines</option>
+                    {% for machine in machines %}
+                    <option value="{{ machine.machine_name }}" {% if machine_filter == machine.machine_name %}selected{% endif %}>
+                        {{ machine.machine_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 mb-3">
+                <label for="user" class="form-label">Filter by User</label>
+                <select class="form-select" id="user" name="user">
+                    <option value="">All Users</option>
+                    {% for user in users %}
+                    <option value="{{ user }}" {% if user_filter == user %}selected{% endif %}>{{ user }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 mb-3">
+                <label for="sort" class="form-label">Sort By</label>
+                <select class="form-select" id="sort" name="sort">
+                    <option value="date" {% if sort_by == 'date' %}selected{% endif %}>Latest First</option>
+                    <option value="age" {% if sort_by == 'age' %}selected{% endif %}>Oldest Test</option>
+                    <option value="machine" {% if sort_by == 'machine' %}selected{% endif %}>Machine Name</option>
+                    <option value="device" {% if sort_by == 'device' %}selected{% endif %}>Device Name</option>
+                </select>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12 text-center">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Apply Filters
+                </button>
+                <a href="{{ url_for('history') }}" class="btn btn-outline-secondary ms-2">
+                    <i class="fas fa-times"></i> Clear All
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Results Summary -->
+<div class="row mb-3">
+    <div class="col-md-8">
+        <p class="mb-0">
+            <i class="fas fa-info-circle"></i> 
+            Showing {{ tests|length }} test record(s)
+            {% if search_query %} for "{{ search_query }}"{% endif %}
+            {% if machine_filter %} - Machine: {{ machine_filter }}{% endif %}
+            {% if user_filter %} - User: {{ user_filter }}{% endif %}
+        </p>
+    </div>
+    <div class="col-md-4 text-end">
+        <small class="text-muted">
+            <i class="fas fa-palette"></i> Color-coded by age: 
+            <span class="badge bg-success">0-30 days</span>
+            <span class="badge bg-warning">31-90 days</span>
+            <span class="badge bg-danger">90+ days</span>
+        </small>
+    </div>
+</div>
+
+<!-- Test Records Table -->
+{% if tests %}
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th><i class="fas fa-cogs"></i> Machine</th>
+                <th><i class="fas fa-shield-alt"></i> Safety Device</th>
+                <th><i class="fas fa-user"></i> Tested By</th>
+                <th><i class="fas fa-clipboard-check"></i> Result</th>
+                <th><i class="fas fa-calendar"></i> Test Date</th>
+                <th><i class="fas fa-clock"></i> Days Since Test</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for test in tests %}
+            <tr class="{% if test.days_since_test <= 30 %}age-0-30{% elif test.days_since_test <= 60 %}age-31-60{% elif test.days_since_test <= 90 %}age-61-90{% elif test.days_since_test <= 120 %}age-91-120{% elif test.days_since_test <= 150 %}age-121-150{% elif test.days_since_test <= 180 %}age-151-180{% else %}age-over-180{% endif %}">
+                <td>
+                    <strong>{{ test.machine_name }}</strong>
+                </td>
+                <td>{{ test.device_name }}</td>
+                <td>
+                    <span class="badge bg-secondary">{{ test.username }}</span>
+                </td>
+                <td>
+                    {% if test.test_result == 'PASS' %}
+                        <span class="status-pass">
+                            <i class="fas fa-check-circle"></i> PASS
+                        </span>
+                    {% else %}
+                        <span class="status-fail">
+                            <i class="fas fa-times-circle"></i> FAIL
+                        </span>
+                    {% endif %}
+                </td>
+                <td>
+                    <small>{{ test.test_date.strftime('%Y-%m-%d %H:%M') if test.test_date else 'N/A' }}</small>
+                </td>
+                <td>
+                    <strong>{{ test.days_since_test }}</strong> days
+                    {% if test.days_since_test > 180 %}
+                        <i class="fas fa-exclamation-triangle text-danger ms-1" title="Overdue for testing!"></i>
+                    {% elif test.days_since_test > 120 %}
+                        <i class="fas fa-exclamation-circle text-warning ms-1" title="Testing due soon"></i>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="fas fa-search-minus text-muted" style="font-size: 3rem;"></i>
+    <h3 class="text-muted mt-3">No Test Records Found</h3>
+    <p class="text-muted">No test records match your current search criteria.</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Record First Test
+    </a>
+</div>
+{% endif %}
+
+<!-- Legend -->
+<div class="mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="fas fa-info-circle"></i> Color Legend</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-2 col-md-4 col-6 mb-2">
+                    <div class="age-0-30 p-2 rounded text-center">
+                        <small><strong>0-30 Days</strong><br>Recent</small>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-6 mb-2">
+                    <div class="age-31-60 p-2 rounded text-center">
+                        <small><strong>31-60 Days</strong><br>Good</small>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-6 mb-2">
+                    <div class="age-61-90 p-2 rounded text-center">
+                        <small><strong>61-90 Days</strong><br>Fair</small>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-6 mb-2">
+                    <div class="age-91-120 p-2 rounded text-center">
+                        <small><strong>91-120 Days</strong><br>Attention</small>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-6 mb-2">
+                    <div class="age-151-180 p-2 rounded text-center">
+                        <small><strong>151-180 Days</strong><br>Critical</small>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-6 mb-2">
+                    <div class="age-over-180 p-2 rounded text-center">
+                        <small><strong>180+ Days</strong><br>Overdue!</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Real-time search functionality
+let searchTimeout;
+document.getElementById('search').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(function() {
+        document.getElementById('filterForm').submit();
+    }, 500); // Wait 500ms after user stops typing
+});
+
+// Auto-submit form when filters change
+document.getElementById('machine').addEventListener('change', function() {
+    document.getElementById('filterForm').submit();
+});
+
+document.getElementById('user').addEventListener('change', function() {
+    document.getElementById('filterForm').submit();
+});
+
+document.getElementById('sort').addEventListener('change', function() {
+    document.getElementById('filterForm').submit();
+});
+
+// Add loading indication when form is submitted
+document.getElementById('filterForm').addEventListener('submit', function() {
+    showLoading();
+});
+
+// Highlight search terms in results
+document.addEventListener('DOMContentLoaded', function() {
+    const searchQuery = '{{ search_query }}';
+    if (searchQuery && searchQuery.length > 0) {
+        highlightSearchTerms(searchQuery);
+    }
+});
+
+function highlightSearchTerms(query) {
+    const cells = document.querySelectorAll('table td');
+    const regex = new RegExp(`(${query})`, 'gi');
+    
+    cells.forEach(cell => {
+        const text = cell.textContent;
+        if (text.toLowerCase().includes(query.toLowerCase())) {
+            cell.innerHTML = cell.innerHTML.replace(regex, '<mark>$1</mark>');
+        }
+    });
+}
+
+// Print functionality
+function printHistory() {
+    window.print();
+}
+
+// Export functionality (could be enhanced with actual CSV export)
+function exportHistory() {
+    alert('Export functionality would be implemented here');
+}
+</script>
+{% endblock %}
