@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Report - ESTOP System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    {% extends "base.html" %}
+    {% block content %}
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>{{ 'Edit Report #' + report.id|string if report and report.id else 'New Report' }}</h2>
+                    <a href="{{ url_for('reports') }}" class="btn btn-secondary">Back to Reports</a>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Report Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('save_report') }}" id="editReportForm">
+                            {% if report and report.id %}
+                            <input type="hidden" name="report_id" value="{{ report.id }}">
+                            {% endif %}
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="incident_date" class="form-label">Incident Date</label>
+                                        <input type="datetime-local" class="form-control" id="incident_date" 
+                                               name="incident_date" value="{{ report.incident_date.strftime('%Y-%m-%dT%H:%M') if report and report.incident_date else '' }}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="location" class="form-label">Location</label>
+                                        <input type="text" class="form-control" id="location" 
+                                               name="location" value="{{ report.location if report else '' }}" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="severity" class="form-label">Severity</label>
+                                        <select class="form-control" id="severity" name="severity" required>
+                                            <option value="">Select Severity</option>
+                                            <option value="low" {{ 'selected' if report and report.severity == 'low' else '' }}>Low</option>
+                                            <option value="medium" {{ 'selected' if report and report.severity == 'medium' else '' }}>Medium</option>
+                                            <option value="high" {{ 'selected' if report and report.severity == 'high' else '' }}>High</option>
+                                            <option value="critical" {{ 'selected' if report and report.severity == 'critical' else '' }}>Critical</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="status" class="form-label">Status</label>
+                                        <select class="form-control" id="status" name="status" required>
+                                            <option value="">Select Status</option>
+                                            <option value="open" {{ 'selected' if report and report.status == 'open' else '' }}>Open</option>
+                                            <option value="investigating" {{ 'selected' if report and report.status == 'investigating' else '' }}>Investigating</option>
+                                            <option value="resolved" {{ 'selected' if report and report.status == 'resolved' else '' }}>Resolved</option>
+                                            <option value="closed" {{ 'selected' if report and report.status == 'closed' else '' }}>Closed</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="reported_by" class="form-label">Reported By</label>
+                                        <select class="form-control" id="reported_by" name="reported_by" required>
+                                            <option value="">Select User</option>
+                                            {% for user_id, user_data in users.items() %}
+                                            <option value="{{ user_id }}" {{ 'selected' if report and report.reported_by == user_id else '' }}>
+                                                {{ user_data.first_name|default('') }} {{ user_data.last_name|default('') }} ({{ user_id }})
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="assigned_to" class="form-label">Assigned To</label>
+                                        <select class="form-control" id="assigned_to" name="assigned_to">
+                                            <option value="">Select User</option>
+                                            {% for user_id, user_data in users.items() %}
+                                            {% if user_data.role in ['supervisor', 'admin'] %}
+                                            <option value="{{ user_id }}" {{ 'selected' if report and report.assigned_to == user_id else '' }}>
+                                                {{ user_data.first_name|default('') }} {{ user_data.last_name|default('') }} ({{ user_data.role|default('user')|title }})
+                                            </option>
+                                            {% endif %}
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Title</label>
+                                <input type="text" class="form-control" id="title" 
+                                       name="title" value="{{ report.title if report else '' }}" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description" name="description" 
+                                          rows="6" required>{{ report.description if report else '' }}</textarea>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="corrective_actions" class="form-label">Corrective Actions</label>
+                                <textarea class="form-control" id="corrective_actions" name="corrective_actions" 
+                                          rows="4">{{ report.corrective_actions if report else '' }}</textarea>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="equipment_involved" class="form-label">Equipment Involved</label>
+                                        <input type="text" class="form-control" id="equipment_involved" 
+                                               name="equipment_involved" value="{{ report.equipment_involved if report else '' }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="witnesses" class="form-label">Witnesses</label>
+                                        <input type="text" class="form-control" id="witnesses" 
+                                               name="witnesses" value="{{ report.witnesses if report else '' }}">
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if report and report.id %}
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    Created: {{ report.created_at.strftime('%Y-%m-%d %H:%M') if report.created_at else 'N/A' }} |
+                                    Last Modified: {{ report.modified_at.strftime('%Y-%m-%d %H:%M') if report.modified_at else 'N/A' }}
+                                </small>
+                            </div>
+                            {% endif %}
+
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="{{ url_for('reports') }}" class="btn btn-secondary me-md-2">Cancel</a>
+                                <button type="submit" class="btn btn-primary">Save Report</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script>
+        // Form validation and submission
+        document.getElementById('editReportForm').addEventListener('submit', function(e) {
+            // Basic validation
+            const requiredFields = ['incident_date', 'location', 'severity', 'status', 'reported_by', 'title', 'description'];
+            let isValid = true;
+            
+            requiredFields.forEach(function(fieldId) {
+                const field = document.getElementById(fieldId);
+                if (!field.value.trim()) {
+                    field.classList.add('is-invalid');
+                    isValid = false;
+                } else {
+                    field.classList.remove('is-invalid');
+                }
+            });
+            
+            if (!isValid) {
+                e.preventDefault();
+                alert('Please fill in all required fields.');
+            }
+        });
+
+        // Clear validation styling on input
+        document.querySelectorAll('.form-control').forEach(function(element) {
+            element.addEventListener('input', function() {
+                this.classList.remove('is-invalid');
+            });
+        });
+    </script>
+    
+    {% endblock %}
+</body>
+</html>

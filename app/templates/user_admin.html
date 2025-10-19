@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Administration - ESTOP System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    {% extends "base.html" %}
+    {% block content %}
+    
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <h2>User Administration</h2>
+                
+                <!-- Add New User Form -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>Add New User</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ url_for('add_user') }}" id="addUserForm">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="firstName" class="form-label">First Name</label>
+                                        <input type="text" class="form-control" id="firstName" name="first_name" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="lastName" class="form-label">Last Name</label>
+                                        <input type="text" class="form-control" id="lastName" name="last_name" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="email" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="email" name="email" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="role" class="form-label">Role</label>
+                                        <select class="form-control" id="role" name="role" required>
+                                            <option value="">Select Role</option>
+                                            <option value="user">User</option>
+                                            <option value="supervisor">Supervisor</option>
+                                            <option value="admin">Admin</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="username" class="form-label">Username</label>
+                                        <input type="text" class="form-control" id="username" name="username" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="password" class="form-label">Password</label>
+                                        <input type="password" class="form-control" id="password" name="password" required>
+                                    </div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Add User</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Existing Users Table -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Existing Users</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Username</th>
+                                        <th>Role</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user_id, user_data in users.items() %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>{{ user_data.first_name|default('') }} {{ user_data.last_name|default('') }}</td>
+                                        <td>{{ user_data.email|default('') }}</td>
+                                        <td>{{ user_id }}</td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if user_data.role == 'admin' %}bg-danger
+                                                {% elif user_data.role == 'supervisor' %}bg-warning
+                                                {% else %}bg-info{% endif %}">
+                                                {{ user_data.role|default('user')|title }}
+                                            </span>
+                                        </td>
+                                        <td>{{ user_data.created_at|default('N/A') }}</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-warning" onclick="editUser('{{ user_id }}')">Edit</button>
+                                            <button class="btn btn-sm btn-danger" onclick="deleteUser('{{ user_id }}')">Delete</button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script>
+        // Function to capitalize first letter of a string
+        function capitalizeFirstLetter(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+        }
+
+        // Add event listeners for first name and last name inputs
+        document.getElementById('firstName').addEventListener('input', function(e) {
+            let value = e.target.value;
+            if (value.length > 0) {
+                e.target.value = capitalizeFirstLetter(value);
+            }
+        });
+
+        document.getElementById('lastName').addEventListener('input', function(e) {
+            let value = e.target.value;
+            if (value.length > 0) {
+                e.target.value = capitalizeFirstLetter(value);
+            }
+        });
+
+        // Also capitalize on blur (when user leaves the field)
+        document.getElementById('firstName').addEventListener('blur', function(e) {
+            let value = e.target.value.trim();
+            if (value.length > 0) {
+                e.target.value = capitalizeFirstLetter(value);
+            }
+        });
+
+        document.getElementById('lastName').addEventListener('blur', function(e) {
+            let value = e.target.value.trim();
+            if (value.length > 0) {
+                e.target.value = capitalizeFirstLetter(value);
+            }
+        });
+
+        function editUser(userId) {
+            // Redirect to edit user page or open modal
+            window.location.href = '/edit_user/' + userId;
+        }
+
+        function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                fetch('/delete_user/' + userId, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error deleting user: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error deleting user');
+                });
+            }
+        }
+    </script>
+    
+    {% endblock %}
+</body>
+</html>

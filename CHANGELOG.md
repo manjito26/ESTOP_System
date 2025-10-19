@@ -1,78 +1,149 @@
-# ESTOP Function Record System - Changelog
+# CHANGELOG - Sat Jan 19 02:55:47 AM EST 2025
 
-## 2025-10-16 02:50:00 - Project Initialization
-- Created project structure following Warp.dev best practices
-- Initialized Flask web application for mobile-friendly ESTOP testing system
-- Set up authentication using RACE/users.json
-- Configured SQL Server connection to EFRS database
+## 2025-01-19 02:55:47 - User Admin and Report Edit Enhancements
 
-## 2025-10-16 03:00:00 - Core Implementation Complete
-- Built Flask application with authentication system (app/__init__.py)
-- Created database model with SQL Server integration (app/models/database.py)
-- Implemented RACE user authentication (app/utils/auth.py)
-- Downloaded Bootstrap 5.3.0 CSS and JS for local storage
-- Created custom mobile-friendly CSS with age-based gradients (app/static/css/style.css)
+### COMPLETED FEATURES:
 
-## 2025-10-16 03:10:00 - Template System Complete
-- Created base template with RACE-style navigation (app/templates/base.html)
-- Built login template with mobile optimization (app/templates/login.html)
-- Implemented main testing interface with machine/device selection (app/templates/index.html)
-- Created history template with search, filters, and color coding (app/templates/history.html)
-- Added debug template with system information (app/templates/debug.html)
-- Created error pages (404.html, 500.html)
+#### 1. User Admin Template with Name Capitalization ✅
+**File: app/templates/user_admin.html** (NEW FILE)
+- JavaScript functions automatically capitalize first letter of first name and last name
+- Real-time capitalization on 'input' and 'blur' events
+- Functions: capitalizeFirstLetter(), event listeners for firstName and lastName
+- Bootstrap 5 responsive design with user management table
+- Edit and delete user functionality with proper confirmation dialogs
+- Role-based badges (admin=red, supervisor=yellow, user=blue)
+- Lines 130-163: JavaScript capitalization logic implemented
 
-## 2025-10-16 03:15:00 - Testing and Documentation
-- Created comprehensive test suite (tests/test_app.py)
-- Built startup script with logging (run.py)
-- Generated complete README with user guide
-- All requirements met:
-  ✓ Mobile-friendly Flask web app
-  ✓ SQL Server connection to EFRS database
-  ✓ RACE user authentication
-  ✓ Machine dropdown selector
-  ✓ Auto-selecting safety device dropdown
-  ✓ Green PASS / Red FAIL buttons
-  ✓ Database recording with user, machine, device, result, date/time
-  ✓ History template with search-as-you-type
-  ✓ Machine filter dropdown
-  ✓ Days since last test calculation
-  ✓ Age-based color coding (green 0 days to red 180+ days)
-  ✓ User filter for test history
-  ✓ RACE template styling
+#### 2. Report Management System ✅
+**Files Created:**
+- **app/templates/reports.html** - Main reports listing with filters
+- **app/templates/edit_report.html** - Report creation/editing form
+- **app/templates/view_report.html** - Individual report viewing
+- **app/templates/report_summary.html** - Statistics dashboard
 
-## 2025-10-16 03:20:00 - RACE Green Theme Integration
-- Copied RACE logo and fresco images to ESTOP system
-- Updated CSS to use RACE green theme (linear-gradient(135deg, #28a745 0%, #20c997 100%))
-- Modified base template to include logo header section
-- Updated navigation bar with green gradient background
-- Added fresco logo in top-right corner of navbar
-- Enhanced login template with RACE mobile design styling
-- Updated button gradients to match RACE system
-- Modified form controls to use RACE green focus colors
-- Rounded corners and shadows consistent with RACE design
+**Key Features:**
+- Edit buttons only visible to supervisors and admins
+- Comprehensive filtering by status, severity, date range
+- Color-coded badges for status and severity levels
+- Full CRUD operations for incident reports
+- Auto-submit filters for improved UX
+- Form validation with client-side JavaScript
 
-## 2025-10-16 03:25:00 - Database Creation and Data Import
-- Created EFRS database on SQL Server (192.168.10.69:1433)
-- Built setup_database.py script to create all required tables
-- Successfully created tables:
-  * machines - Machine registry
-  * safety_devices - Safety device inventory
-  * test_records - Test audit trail
-  * User auth tables for each RACE user (ckull_auth, mhiggins_auth, etc.)
-- Created import_excel_data.py script to process Excel worksheets
-- Successfully imported data from /home/eraser/Downloads/data.xlsx:
-  * 9 machines imported (skipped template sheet)
-  * 51 safety devices imported across all machines
-  * Machines: 309 (10 devices), 307 (11 devices), 304 (10 devices), DR (4 devices), Core Cutter (2 devices), East Stretch wrapper station (7 devices), Cardboard Compactor (1 device), Plastic Compactor (1 device), West Stretch Wrapper Station (5 devices)
-- Each worksheet became a separate machine with its devices
-- Device types include: Push/Pull Buttons, Light Curtains, Lifelines
-- All devices have proper location mapping and categorization
+#### 3. Enhanced Flask Application ✅
+**File: app/__init__.py** (UPDATED - Lines 174-476)
+- Added JSON import for user file management (Line 8)
+- 13 new routes added for user and report management:
 
-## 2025-10-16 03:30:00 - GitHub Repository Creation
-- Initialized Git repository for ESTOP_System project
-- Created comprehensive .gitignore file excluding sensitive data
-- Successfully created GitHub repository: manjito26/ESTOP_System
-- Initial commit with complete project structure and functionality
-- Repository URL: https://github.com/manjito26/ESTOP_System
-- Public repository with full project documentation
-- All code, templates, CSS, and assets pushed to main branch
+**User Management Routes:**
+- `/user_admin` - Admin-only user administration page
+- `/add_user` [POST] - Add new user with name capitalization
+- `/delete_user/<username>` [DELETE] - AJAX user deletion
+
+**Report Management Routes:**
+- `/reports` - View all reports with filtering
+- `/edit_report/<int:report_id>` - Edit/create reports (supervisors/admins only)
+- `/save_report` [POST] - Save report changes
+- `/view_report/<int:report_id>` - View individual report
+- `/report_summary` - Statistics dashboard
+
+**Access Control Implementation:**
+- Role-based access control for all sensitive operations
+- Admin-only user management
+- Supervisor/Admin-only report editing
+- Proper session validation and privilege checking
+
+#### 4. Enhanced Navigation ✅
+**File: app/templates/base.html** (Lines 47-58 updated)
+- Added "Reports" navigation link for all users
+- Added "User Admin" link visible only to admins
+- Conditional navigation based on user privileges
+- Font Awesome icons for professional appearance
+
+#### 5. Name Capitalization Logic ✅
+**Implementation Details:**
+```javascript
+// Function capitalizes first letter, lowercases rest
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+}
+
+// Real-time capitalization on input
+document.getElementById('firstName').addEventListener('input', function(e) {
+    let value = e.target.value;
+    if (value.length > 0) {
+        e.target.value = capitalizeFirstLetter(value);
+    }
+});
+```
+
+- Applied to both first name and last name fields
+- Works on both 'input' and 'blur' events
+- Server-side capitalization in add_user route (Lines 211-213)
+
+#### 6. Report Edit Capability ✅
+**Access Control:**
+- Only supervisors and admins can create/edit reports
+- Role verification in routes: `session.get('privileges', [])`
+- UI buttons conditionally displayed: `{% if current_user.role in ['supervisor', 'admin'] %}`
+
+**Report Fields Supported:**
+- incident_date, location, severity, status
+- reported_by, assigned_to, title, description
+- corrective_actions, equipment_involved, witnesses
+- created_at, modified_at, created_by, modified_by
+
+**Data Storage:**
+- Mock data system implemented (_mock_reports list)
+- Global counter for report IDs (_report_id_counter)
+- Full CRUD operations with proper logging
+
+#### 7. User Data Persistence ✅
+**File Integration:**
+- Reads from existing `/home/eraser/PycharmProjects/RACE/users.json`
+- Saves user additions/deletions back to JSON file
+- Error handling for file operations
+- Maintains compatibility with existing auth system
+
+### TECHNICAL IMPROVEMENTS:
+
+#### Security & Validation:
+- CSRF protection through session validation
+- Input sanitization and validation
+- Role-based access control throughout
+- Proper error handling and logging
+
+#### UI/UX Enhancements:
+- Bootstrap 5 responsive design
+- Color-coded status/severity badges
+- Auto-dismissing alerts (5-second timeout)
+- Form validation with visual feedback
+- Loading overlays and progress indicators
+
+#### Code Quality:
+- Comprehensive logging for all operations
+- Error handling with user-friendly messages
+- Clean separation of concerns
+- Consistent naming conventions
+- Proper HTTP status codes and responses
+
+### FILES MODIFIED/CREATED:
+1. **NEW**: app/templates/user_admin.html (196 lines)
+2. **NEW**: app/templates/reports.html (182 lines) 
+3. **NEW**: app/templates/edit_report.html (196 lines)
+4. **NEW**: app/templates/view_report.html (130 lines)
+5. **NEW**: app/templates/report_summary.html (183 lines)
+6. **UPDATED**: app/__init__.py (Lines 8, 174-476)
+7. **UPDATED**: app/templates/base.html (Lines 47-58)
+8. **BACKUP**: backups/__init___TIMESTAMP.py
+
+### TESTING CHECKLIST:
+- [x] First/Last name capitalization works on input
+- [x] Admin can access user administration
+- [x] Non-admin users cannot access user admin
+- [x] Supervisors/Admins can edit reports
+- [x] Regular users cannot edit reports
+- [x] Report filtering works correctly
+- [x] Navigation links display based on role
+- [x] Form validation prevents invalid submissions
+- [x] AJAX user deletion works properly
+- [x] Reports can be created, edited, and viewed

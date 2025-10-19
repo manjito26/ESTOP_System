@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Summary - ESTOP System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    {% extends "base.html" %}
+    {% block content %}
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Report Summary</h2>
+                    <a href="{{ url_for('reports') }}" class="btn btn-secondary">Back to Reports</a>
+                </div>
+                
+                <!-- Summary Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card text-white bg-primary">
+                            <div class="card-header">Total Reports</div>
+                            <div class="card-body">
+                                <h4 class="card-title">{{ summary.total }}</h4>
+                                <p class="card-text">All time</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-danger">
+                            <div class="card-header">Open Reports</div>
+                            <div class="card-body">
+                                <h4 class="card-title">{{ summary.open }}</h4>
+                                <p class="card-text">Needs attention</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-warning">
+                            <div class="card-header">Critical Reports</div>
+                            <div class="card-body">
+                                <h4 class="card-title">{{ summary.critical }}</h4>
+                                <p class="card-text">High priority</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card text-white bg-success">
+                            <div class="card-header">Resolved Reports</div>
+                            <div class="card-body">
+                                <h4 class="card-title">{{ summary.resolved }}</h4>
+                                <p class="card-text">Completed</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Reports -->
+                {% if reports %}
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Recent Reports</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Title</th>
+                                        <th>Severity</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for report in reports[-10:] %}
+                                    <tr>
+                                        <td>{{ report.id }}</td>
+                                        <td>
+                                            <a href="{{ url_for('view_report', report_id=report.id) }}" class="text-decoration-none">
+                                                {{ report.title[:40] }}{% if report.title|length > 40 %}...{% endif %}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if report.severity == 'critical' %}bg-danger
+                                                {% elif report.severity == 'high' %}bg-warning text-dark
+                                                {% elif report.severity == 'medium' %}bg-info
+                                                {% else %}bg-success{% endif %}">
+                                                {{ report.severity|title }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge 
+                                                {% if report.status == 'open' %}bg-danger
+                                                {% elif report.status == 'investigating' %}bg-warning text-dark
+                                                {% elif report.status == 'resolved' %}bg-info
+                                                {% else %}bg-success{% endif %}">
+                                                {{ report.status|title }}
+                                            </span>
+                                        </td>
+                                        <td>{{ report.created_at.strftime('%Y-%m-%d') if report.created_at else 'N/A' }}</td>
+                                        <td>
+                                            <a href="{{ url_for('view_report', report_id=report.id) }}" class="btn btn-sm btn-outline-info">View</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5>No Reports Yet</h5>
+                        <p class="text-muted">No incident reports have been created.</p>
+                        <a href="{{ url_for('edit_report', report_id=0) }}" class="btn btn-primary">Create First Report</a>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Charts placeholder -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6>Reports by Severity</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="severityChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6>Reports by Status</h6>
+                            </div>
+                            <div class="card-body">
+                                <canvas id="statusChart" width="400" height="200"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script>
+        // Simple chart placeholder - you could integrate Chart.js here for real charts
+        document.addEventListener('DOMContentLoaded', function() {
+            // Placeholder for chart implementation
+            const severityCtx = document.getElementById('severityChart');
+            const statusCtx = document.getElementById('statusChart');
+            
+            if (severityCtx && statusCtx) {
+                // Simple text-based chart for now
+                severityCtx.style.display = 'flex';
+                severityCtx.style.alignItems = 'center';
+                severityCtx.style.justifyContent = 'center';
+                severityCtx.style.height = '200px';
+                severityCtx.innerHTML = '<div class="text-muted">Chart placeholder - integrate Chart.js for visual charts</div>';
+                
+                statusCtx.style.display = 'flex';
+                statusCtx.style.alignItems = 'center';
+                statusCtx.style.justifyContent = 'center';
+                statusCtx.style.height = '200px';
+                statusCtx.innerHTML = '<div class="text-muted">Chart placeholder - integrate Chart.js for visual charts</div>';
+            }
+        });
+    </script>
+    
+    {% endblock %}
+</body>
+</html>
